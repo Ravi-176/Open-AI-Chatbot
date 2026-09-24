@@ -3,10 +3,10 @@ from PyPDF2 import PdfReader
 from langchain_classic.chains.question_answering import load_qa_chain
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from streamlit import sidebar
-OpenAIKey=st.secrets("OPEN_ROUTER_API_KEY")
+from langchain_openai import OpenAIEmbeddings
+OpenAIKey=st.secrets["OPENAI_API_KEY"]
 st.header("NoteBot")
 with sidebar:
     st.title("My Notes")
@@ -23,9 +23,7 @@ if file is not None:
     chunks=splitter.split_text(text)
     #st.write(chunks)
     #Creating object of OpenAIEmbeddings which lets us connect to embedding models
-    embeddings=HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    embeddings=OpenAIEmbeddings(api_key=OpenAIKey,model="text-embedding-3-large")
     #generating embeddings,creating a vector database and storing the embeddings
     vector_store=FAISS.from_texts(chunks,embeddings)
     #get user query
@@ -35,10 +33,10 @@ if file is not None:
         matching_chunks=vector_store.similarity_search(user_query)
         #define our LLM
         llm = ChatOpenAI(
-            model="openai/gpt-oss-20b",
-            openai_api_key=OpenAIKey,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0
+            api_key=OpenAIKey,
+            max_tokens=300,
+            temperature=0,
+            model="gpt-3.5-turbo"
         )
         #Generating the response
         chain=load_qa_chain(llm,chain_type="stuff")
